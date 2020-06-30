@@ -21,7 +21,7 @@ logger.addHandler(logging.NullHandler())  # avoid "No handler found" warnings
 API_URL = "https://api.xplenty.com/%s/api/"   # %s is a placehoher for the account id
 
 HEADERS = {
-	'Accept': 'application/vnd.xplenty+json',
+	'Accept': 'application/vnd.xplenty+json; version=2',
 }
 
 
@@ -337,12 +337,12 @@ class XplentyClient(object):
 
     def create_cluster(self, cluster_type, nodes, cluster_name, cluster_description, terminate_on_idle=False, time_to_idle=3600):
         cluster_info ={}
-        cluster_info["cluster[type]"]= cluster_type
-        cluster_info["cluster[nodes]"]= nodes
-        cluster_info["cluster[name]"]= cluster_name if cluster_name else ""
-        cluster_info["cluster[description]"]= cluster_description if cluster_description else ""
-        cluster_info["cluster[terminate_on_idle]"]= 1 if terminate_on_idle else 0
-        cluster_info["cluster[time_to_idle]"]= time_to_idle
+        cluster_info["type"]= cluster_type
+        cluster_info["nodes"]= nodes
+        cluster_info["name"]= cluster_name if cluster_name else ""
+        cluster_info["description"]= cluster_description if cluster_description else ""
+        cluster_info["terminate_on_idle"]= 1 if terminate_on_idle else 0
+        cluster_info["time_to_idle"]= time_to_idle
         method_path = 'clusters'
         url = self._join_url( method_path )
         resp = self.post(url,cluster_info)
@@ -376,17 +376,21 @@ class XplentyClient(object):
 
     def add_job(self, cluster_id, package_id, vars={}, dynamic_vars={}):
         job_info = {}
-        job_info["job[cluster_id]"]= cluster_id
+        job_info["cluster_id"]= cluster_id
         # We use job_id instead of package_id since that's how it is accepted on Xplenty's side
-        job_info["job[job_id]"]= package_id
+        job_info["job_id"]= package_id
 
+        variables = {}
         for k, v in vars.items():
-            new_key = "job[variables][%s]"%(k)
-            job_info[new_key]= v
+            variables[k] = v
+        if variables:
+            job_info["variables"] = variables
 
+        dynamic_variables = {}
         for k, v in dynamic_vars.items():
-            new_key = "job[dynamic_variables][%s]"%(k)
-            job_info[new_key]= v
+            dynamic_variables[k] = v
+        if dynamic_variables:
+            job_info["dynamic_variables"] = dynamic_variables
 
         method_path = 'jobs'
         url = self._join_url( method_path )
